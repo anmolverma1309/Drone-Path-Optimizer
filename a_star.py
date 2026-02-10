@@ -1,28 +1,16 @@
-#this is the step 3 for the drone optimizer
-"""
-in this the drone learn how to move and we are using A*path findings
-this is the core algo which allows the drone to get from a to b intelligently
-it uses the grid fn and here are the details about the drone and its configures 
-"""
 
 import heapq
 
 class Node:
 
-    def __init__ (path, pos, g = 0, h = 0, parent = None):
+    def __init__ (path, posture, goals = 0, h = 0, parentzz = None):
 
-        """
-        pos tell the position of row and colomn
-        g is the cost from start to this point
-        h is the heuristic cost to goal
-        parent: parent node in path
-        """
 
-        path.pos = pos
-        path.g = g #Cost from the start 
-        path.h = h #heristic to goal
-        path.f = g+h #total expend
-        path.parent = parent
+        path.posture = posture
+        path.goals = goals
+        path.h = h 
+        path.f = goals+h 
+        path.parent = parentzz
 
 
     def __priority__(prior, other):
@@ -30,102 +18,74 @@ class Node:
     
 
     def __equa__(equal, other):
-        return equal.pos == other.pos
+        return equal.posture == other.posture
     
     def __hash__ (hashoperation):
-        return hash(hashoperation.pos)
+        return hash(hashoperation.posture)
     
-def distance(pos1, pos2):
-    """
-    calc distance heuristic
-    pos 1 and pos 2 are position
-
-    """
-    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+def distance(posture1, posture2):
+    
+    return abs(posture1[0] - posture2[0]) + abs(posture1[1] - posture2[1])
 
 
 def a_star_search(grid, start, goal):
-    """
-    A* pathfinding algorithm
 
-    grid will grid object with isvalid and surroundings 
-    start is the starting position
-     and finally 
-    list will path as list of position or None if no path exists
-
-    """
-
-    #check if the start and goal are valid
+    
     if not grid.isvalid(start) or not grid.isvalid(goal):
         return None
     
-    # here we are initialize this
-    start_node = Node(start, g = 0, h= distance(start,goal))
+   
+    start_node = Node(start, goals = 0, h= distance(start,goal))
     openset = []
     heapq.heappush (openset, start_node)
 
-    # now here this will track the visited nodes and their costs
-
+    
     visited = set()
     costsofar = {start: 0}
 
     while openset:
-        # get the node with the lowest score
         current = heapq.headppop(openset)
 
-        # here the goal reached 
-        if current.pos == goal:
+        if current.posture == goal:
             return reconstruct_path(current)
         
-        #skip if this is alreadt visited
-        if current.pos in visited:
+        
+        if current.posture in visited:
             continue
 
-        visited.add(current.pos)
+        visited.add(current.posture)
 
-        #check surroundings
-        for surroundingpos in grid.surroundings(current.pos):
-            # this calculate the cost to surrounding
-            newcost = current.g + 1 # this give the cost of  1 per move
+        
+        for surroundingposture in grid.surroundings(current.pos):
+            newcost = current.goals + 1 
 
-            #skip if we found a better path to this surroundings
-            if surroundingpos in costsofar and newcost >= costsofar[surroundingpos]:
+            if surroundingposture in costsofar and newcost >= costsofar[surroundingposture]:
                 continue
 
-            # now we will create the surrouding node 
-            h = distance(surroundingpos, goal)
-            surrounding_node = Node(surroundingpos, g = newcost, h = h , parent = current)
+            h = distance(surroundingposture, goal)
+            surrounding_node = Node(surroundingposture, goals = newcost, h = h , parentzz = current)
 
-            # add to the open set 
-            costsofar[surroundingpos] = newcost
+            costsofar[surroundingposture] = newcost
             heapq.heappush(openset, surrounding_node)
 
-    #here this return if no path will found
+    
     return None
 
 def reconstruct_path(node):
-    """
-    reconstruct path from goal to start
-    and here the list will treat as the path as list of positions from start to goal
-    """
+    
 
     path = []
     current = node
 
     while current is not None:
-        path.append(current.pos)
+        path.append(current.posture)
         current = current.parent
 
     path.reverse()
     return path
 
 def findTheNearestUnvisited(grid, drone, unvisited_cells):
-    """find the nearest unvisied call using A*
-    grid means grid object
-    drone means drone object for current position
-    unvisited_cells means the set of unvisited positions
     
-    and now will return the nearest position and path or the none, none if no reachable cells"""
 
 
     if not unvisited_cells:
@@ -135,13 +95,10 @@ def findTheNearestUnvisited(grid, drone, unvisited_cells):
     best_path = None
     best_distance = float('inf')
 
-    # now we will try to find the paths to nearby unvisited cells 
-    #sort by distance for efficiency
     sorted_cells = sorted(unvisited_cells,
-                          key = lambda pos: distance (current_position, pos))
+                          key = lambda posture: distance (current_position, posture))
     
 
-    # check first 10 closest cells which is also called the optimization
     for target in sorted_cells[:10]:
         path = a_star_search (grid, current_position, target)
         if path and len(path) < best_distance:
@@ -153,18 +110,15 @@ def findTheNearestUnvisited(grid, drone, unvisited_cells):
 
 
 if __name__ == "__main__":
-    #this will give a demo A8 pathfinding
 
     from grid import Grid
     
     print("=== A* Pathfinding Demo ===")
     print("-" * 40)
 
-    # now this will create the simple grid
     grid = Grid (size = 10, obstacle_prob = 0.2, seedling = 42)
     grid.setstartposition((0, 0))
 
-    #now here we find the path
     start = (0, 0)
     goal = (9, 9)
 
@@ -179,17 +133,16 @@ if __name__ == "__main__":
         print("[Fail] No path exists!")
 
 
-    #vosia;ize grid 
-    print("\nGrid (X=obstacle, S=start, G=goal, *=path):")
+    print("\nGrid (X=obstacle, S=start, Goals=goal, *=path):")
     for i in range (grid.size):
         rowstr = ""
         for j in range(grid.size):
-            pos = (i, j)
-            if pos == start:
+            posture = (i, j)
+            if posture == start:
                 rowstr += "S "
-            elif pos == goal:
-                rowstr += "G "
-            elif path and pos in path:
+            elif posture == goal:
+                rowstr += "Goals "
+            elif path and posture in path:
                 rowstr += "* "
             elif grid.grid[i][j]  == 1:
                 rowstr += "X "

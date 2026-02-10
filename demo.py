@@ -1,9 +1,4 @@
-#this is the next step or the step 6 
-#in this we will import everthing we built grid, drone, coverage and the dashboard
-# setup the simpulation loop and run the animation with it
 
-"""here the demo of the project drone path optimizer 
-the autonomous surveillance drone with a star pathfinding and coverage optimization"""
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -24,15 +19,12 @@ from visualize import Dashboard
 
 
 class LiveDemo:
-    """demo for the drone path optimization"""
+    
 
     def __init__ (self, gridSize = 20, battery = 200, seedling = None):
-        """inintialize the drone and the demo 
-        grid size implies as the size of grid NxN
-        battery is the drone battery capacity
-        seed sets as the random seed for reproducibility"""
+        
 
-        #create components
+       
         self.grid = Grid(size = gridSize, obstacle_prob = 0.12,
                          no_fly_zone = 0.06, seedling = seedling)
         self.grid.setstartposition((0, 0))
@@ -40,20 +32,20 @@ class LiveDemo:
         self.drone = Drone(startposition = (0, 0), batteryCapacity = battery)
         self.planner = CoveragePlanner(self.grid, self.drone)
 
-        #generate cpverage path
+       
         self.full_path = self.planner.plan_adaptiveCoverage(battery_limit = 20)
         self.current_step = 0
 
-        #dashboard
+      
         self.dashboard = Dashboard(self.grid, self.drone)
 
-        #animation control
+      
         self.paused = False
-        self.speed = 1 #steps per frame it takes that will display here
+        self.speed = 1 
 
 
     def stepping(self):
-        #executes one step of the simpulation
+        
 
         if self.current_step < len(self.full_path):
             next_pos = self.full_path[self.current_step]
@@ -64,9 +56,9 @@ class LiveDemo:
         
 
         def amimator(anime, frame):
-            """animaation updating funcitonn"""
+            
             if not self.paused:
-                # this will execute the multiple steps per fram based
+                
                 for _ in range(anime.speed):
                     if not anime.step():
                         break

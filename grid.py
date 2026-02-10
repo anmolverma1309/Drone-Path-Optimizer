@@ -1,8 +1,4 @@
-#starting with the defense or the drone 
-#for the problem I am doing i need a gird first
-#this is the first step to generate the grid as all the obstacle will come inside it
 
-# so starting with it
 
 import numpy as np
 import random
@@ -12,13 +8,8 @@ class Grid:
 
     def __init__ (thegreedygrid, size = 20, obstacle_prob = 0.1, no_fly_zone = 0.05, seedling = None):
 
-        #this will or is the start of the grid
-        """
-        size make the grid
-        obstacle prob: this give the probability of obstacle placement because whether the obstacle will present their or not 
-        no_fly_zone give the probability of no fly zone placement that could also be whether the zone is legal or not
-        seedling is random/none for the reproducibility  
-        """
+        
+        
 
         thegreedygrid.size = size
         thegreedygrid.obstacle_prob = obstacle_prob
@@ -44,31 +35,21 @@ class Grid:
                     thegreedygrid.grid [i][j] = 2
         
     def isvalid(self, pos):
-        """
-            so making this fn as it checks whether the position is valid or not means whether the are inside the boundary and should not be in an obstacle and no fly zone
-            
-            so for checking this we are taking the boolean which return true if valid else no
-
-        """
+        
         row, col = pos
 
-            #for checking the boundary
+           
         if row < 0 or row >= self.size or col < 0 or col >= self.size:
             return False
             
         return True
         
     def surroundings (ownself, pos):
-        """
-        so this will get the valid neighboring position that meaning where the surrounding are 
-
-
-        """
+        
         row, col = pos
         surround = []
 
-        # so we are setting the movements here to make  it simple we are only taking four movements
-
+        
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
         for hori, verti in directions:
@@ -79,14 +60,7 @@ class Grid:
         return surround
     
     def typeofcall(typo, pos):
-        """
-        in this we will get the type of the cell 
-
-        so for instance we are taking the parameters as if 0 then safe
-        1 means obstacle 
-        2 menas no fly 
-        -1 means out of boundary
-        """
+        
 
         row, col = pos
         if row < 0 or row >= typo.size or col < 0 or col >= typo.size:
@@ -96,7 +70,7 @@ class Grid:
     
 
     def setstartposition (start, pos):
-        """only for getting that the start position should be clear"""
+        
 
         row, col = pos
         if 0 <= row < start.size and 0 <= col < start.size:
@@ -117,7 +91,6 @@ class Grid:
         }
     
 if __name__ == "__main__":
-        # so here we are going to display the grid stats the drone parameteres or the required condition for SAH
     print ("=== Grid Demo===")
     print ("-"* 40)
 

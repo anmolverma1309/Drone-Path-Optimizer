@@ -1,4 +1,4 @@
-# this is the next step of our process in this we test suite for a* pathfinding
+
 
 import sys 
 import os 
@@ -9,7 +9,7 @@ from a_star import a_star_search, distance
 
 
 def testDistance():
-    #test the distance calculation
+    
     assert distance((0, 0), (3, 4)) == 7
     assert distance((0, 0), (0, 0)) == 0
     assert distance((5, 5), (2, 3)) == 5
@@ -17,7 +17,7 @@ def testDistance():
 
 
 def testPathonemptyGrid():
-    """ testing the a* on obstacle free grid"""
+    
     grid = Grid(size = 5, obstacle_prob = 0, no_fly_zone = 0)
 
     start = (0, 0)
@@ -33,16 +33,16 @@ def testPathonemptyGrid():
     print("[OK] Empty grid pathfinding test passed")
 
 def testpathwithObstacles():
-    #test a* navigates around obstacles
+    
     grid = Grid (size = 5, seedling = 42)
 
-    #creating a clear path manually to ensure test reliabilityy
+    
 
     for i in range(5):
         for j in range (5):
             grid.grid[i][j] = 0
 
-    #add an obstacle
+    
     grid.grid[1][1] = 1
 
     start = (0, 0)
@@ -59,10 +59,10 @@ def testpathwithObstacles():
 
 
 def testnopathExists():
-    # test a star returns none when nno path exists
+    
     grid = Grid (size = 5, obstacle_prob = 0, no_fly_zone = 0)
 
-    #block all paths by creating a wall 
+    
     for i in range(5):
         grid.grid[2][1] = 1
 
