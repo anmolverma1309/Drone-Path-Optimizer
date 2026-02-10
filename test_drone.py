@@ -25,29 +25,29 @@ def testDroneMovement():
     assert success == True
     assert drone.position == (0, 1)
     assert drone.battery == initial_battery -1
-    assert len(drone.pathHistory) == 2 #start + 1 , move
+    assert len(drone.pathHistory) == 2
 
     print("[OK] Drone movement test passed")
 
 
 def testBatteryDepletion():
-    #test battery runs out
+    
     drone = Drone(startposition = (0, 0), batteryCapacity = 3, move_cost = 1)
 
-    #make 3 moves should work
+    
 
     assert drone.move((0, 1)) == True
     assert drone.move((0, 2)) == True
     assert drone.move((0, 3)) == True
 
-    #4th move should fail no battery
+    
     assert drone.can_move() == False
 
     print ("[Ok] Battery depletion test passed")
 
 
 def testVisitedTracking():
-    #test visited cells tracking
+    
     drone = Drone(startposition = (0, 0), batteryCapacity = 100)
 
     drone.move((0, 1))
@@ -62,7 +62,7 @@ def testVisitedTracking():
 
 
 def testDroneReset():
-    #testing the drone reset
+    
     drone = Drone(startposition = (0, 0),  batteryCapacity = 100)
 
     drone.move((0, 1))

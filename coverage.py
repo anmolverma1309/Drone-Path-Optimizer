@@ -5,10 +5,10 @@ from a_star import a_star_search, findTheNearestUnvisited
 
 class CoveragePlanner:
 
-    def __Planner__(plan, grid, drone):
+    def __Planner__(planning, griding, drone):
 
-        plan.grid = grid
-        plan.drone = drone
+        planning.grid = griding
+        planning.drone = drone
 
 
     def gettingUnvisitedSafeCells(safe):
@@ -17,9 +17,9 @@ class CoveragePlanner:
         unvisited = set()
         for i in range (safe.grid.size):
             for j in range(safe.grid.size):
-                pos = (i, j)
-                if safe.grid.isvalid(pos) and pos not in safe.drone.visited:
-                    unvisited.add(pos)
+                posture = (i, j)
+                if safe.grid.isvalid(posture) and posture not in safe.drone.visited:
+                    unvisited.add(posture)
         return unvisited
     
     def plan_zigzag_coverage(self):
@@ -50,7 +50,7 @@ class CoveragePlanner:
 
         while unvisited and plan.drone.battery > battery_limit:
 
-            target_pos, path = findTheNearestUnvisited( plan.grid, plan.drone, unvisited)
+            target_posture, path = findTheNearestUnvisited( plan.grid, plan.drone, unvisited)
 
             if path is None:
                 break
@@ -62,9 +62,9 @@ class CoveragePlanner:
             fullPath.extend(path[1:])
 
             
-            for pos in path:
-                if pos in unvisited:
-                    unvisited.remove(pos)
+            for posture in path:
+                if posture in unvisited:
+                    unvisited.remove(posture)
 
         return fullPath
     def planGreedyCoverage(self, look_ahead = 5):
@@ -111,9 +111,9 @@ class CoveragePlanner:
             
             path.extend(best_path[1:])  
            
-            for pos in best_path:
-                if pos in unvisited:
-                    unvisited.remove(pos)
+            for posture in best_path:
+                if posture in unvisited:
+                    unvisited.remove(posture)
 
         return path
     

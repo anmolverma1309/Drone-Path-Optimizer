@@ -63,10 +63,10 @@ class LiveDemo:
                     if not anime.step():
                         break
 
-            #updating the dashboard
+           
             self.dashboard.update()
 
-            #add the completion message
+         
             if anime.current_step >= len(self.full_path):
                 status = self.drone.get_status()
                 total_safe = np.sum(self.grid.grid == 0)
@@ -84,13 +84,9 @@ class LiveDemo:
                                                 bbox = dict(boxstyle = 'round', facecolor = '#0a0a0a', alpha = 0.8))
     def execution(exe, interval = 50, save_gif = False):
 
-        """
-       we will run the live demo here in this block only
-       here the inerval give the animation interval in millisecodns
-       where as the save gif give whether to safe as the gif or not 
-        """
+        
 
-        #here we are going to print initial stats which will give the configures of the drone for it better optimization
+        
         print ("Drone Path Optimizer - live demo")
         print("=" * 50)
         print(f"Grid Size: {exe.grid.size}x{exe.grid.size}")
@@ -108,12 +104,12 @@ class LiveDemo:
         print(f"\nExpected Coverage: {estimated_coverage:.1f}%")
         print("\nStarting animationsss......")
 
-        #setup and running the environment of the animation
+       
         exe.dashboard.setupPlot()
 
         anim = FuncAnimation(exe.dashboard.fig, exe.animate,
                              interval = interval, blit = False,
-                             frames = len(exe.full_path) + 10) #this will provides the extra frames to show completion
+                             frames = len(exe.full_path) + 10) 
         
         if save_gif:
             print("Saving animation as 'drone_demo.gif'...")
@@ -125,31 +121,29 @@ class LiveDemo:
 
 
 def static_demo():
-    """quick static visulalization for testing the drone here """
+    
     print("static demo.(quick previeww)")
     print("-" * 40)
 
-    #creating the components
     grid = Grid(size = 15, obstacle_prob = 0.015, seedling =42)
     grid.setstartposition((0, 0))
     drone = Drone(startposition = (0, 0), batteryCapacity = 150)
 
-    #plan and execute path
+    
     planner = CoveragePlanner(grid, drone)
     path = planner.plan_adaptiveCoverage(battery_limit = 15)
 
-    #execute path 
-    for pos in path [:min(len(path), 100)]: # limit for thje static demo
+    
+    for pos in path [:min(len(path), 100)]: 
         drone.movew(pos)
 
 
-    #showing the dashboard
     dashboard = Dashboard(grid, drone)
     dashboard.show()
 
 
 def comparison_demo():
-    """"it compares different coverage strategies"""
+    
     print("strategy comparison demo")
     print("-" * 40)
 
@@ -157,25 +151,25 @@ def comparison_demo():
     results = []
 
     for strategy in  strategies:
-        #reset for each strategy
+       
         grid = Grid(size  =15, obstacle_prob= 0.15, seedling = 42)
         grid.setstartposition((0, 0))
         drone = Drone(startposition = (0, 0), batteryCapacity = 120)
         planner = CoveragePlanner(grid, drone)
 
-        #path planning of the drone will execute  here
+        
         if strategy == 'adaptive':
             path = planner.path_adaptiveCoverage(battery_limit = 15)
         else:
             path = planner.planGreedyCoverage( look_ahead = 5)
 
-        # execution of the path 
+        
         for pos in path:
             if not drone.move(pos):
                 break
 
 
-        #getting of with the stats
+        
         status = drone.gettingStatus()
         total_safe = np.sum(grid.grid == 0)
         coverage = (status['covearage'] / total_safe) * 100
@@ -197,7 +191,7 @@ def comparison_demo():
 if __name__ == "__main__":
     import sys
 
-    #check command line arguments
+    
     if len(sys.argv) > 1:
         mode = sys.argv[1]
 
@@ -210,12 +204,11 @@ if __name__ == "__main__":
             print("Usage: python demo.py [static| compare]")
 
     else:
-        #default: run live animated demo 
+        
         demo = LiveDemo(gridSize = 20, battery = 200, seedling= 42)
         demo.run(interval = 50, save_gif = False)
 
-        #to save as gif, uncomment:
-        #demo.run (interval = 100, savw_gif = True)
+    
         
 
 

@@ -28,7 +28,7 @@ def testPathonemptyGrid():
     assert path is not None
     assert path[0] == start
     assert path[-1] == goal
-    assert len(path) == 9 #distance +1
+    assert len(path) == 9 
 
     print("[OK] Empty grid pathfinding test passed")
 
@@ -53,7 +53,7 @@ def testpathwithObstacles():
     assert path is not None
     assert path[0] == start
     assert path[-1] == goal
-    assert (1, 1) not in path #this should avoid obstacle
+    assert (1, 1) not in path 
 
     print("[OK] obstacle avoidance test passed")
 
