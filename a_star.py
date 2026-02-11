@@ -1,23 +1,23 @@
-
+# path = pathing
 import heapq
 
 class Node:
 
-    def __init__ (path, posture, goals = 0, h = 0, parentzz = None):
+    def __init__ (pathing, posture, goals = 0, h = 0, parentzz = None):
 
 
-        path.posture = posture
-        path.goals = goals
-        path.h = h 
-        path.f = goals+h 
-        path.parent = parentzz
+        pathing.posture = posture
+        pathing.goals = goals
+        pathing.h = h 
+        pathing.f = goals+h 
+        pathing.parent = parentzz
 
 
-    def __priority__(prior, other):
+    def __lt__(prior, other):
         return prior.f < other.f
     
 
-    def __equa__(equal, other):
+    def __eq__(equal, other):
         return equal.posture == other.posture
     
     def __hash__ (hashoperation):
@@ -44,7 +44,7 @@ def a_star_search(grid, start, goal):
     costsofar = {start: 0}
 
     while openset:
-        current = heapq.headppop(openset)
+        current = heapq.heappop(openset)
 
         if current.posture == goal:
             return reconstruct_path(current)
@@ -56,7 +56,7 @@ def a_star_search(grid, start, goal):
         visited.add(current.posture)
 
         
-        for surroundingposture in grid.surroundings(current.pos):
+        for surroundingposture in grid.surroundings(current.posture):
             newcost = current.goals + 1 
 
             if surroundingposture in costsofar and newcost >= costsofar[surroundingposture]:

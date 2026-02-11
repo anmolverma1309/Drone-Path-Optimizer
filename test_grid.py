@@ -4,7 +4,7 @@ import sys
 import os
  
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '...')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 from grid import Grid
@@ -20,7 +20,8 @@ def testgridcreation():
 def testgridcelltypes():
     
 
-    grid = Grid(size = 10, seed = 42)
+    # Fix: seedling
+    grid = Grid(size = 10, seedling = 42)
     unique_values = set(grid.grid.flatten())
 
     
@@ -62,19 +63,22 @@ def testgetsurroundings():
         for j in range(5):
             grid.grid[i][j] = 0
 
-        surroundings = grid.get_surroundings((2, 2))
-        assert len(surroundings) <= 4
+    # Fix: surroundings
+    surroundings = grid.surroundings((2, 2))
+    assert len(surroundings) <= 4
 
-        
-        surroundings = grid.get_surroundings((0, 0))
-        assert len(surroundings) <= 2
+    
+    surroundings = grid.surroundings((0, 0))
+    assert len(surroundings) <= 2
 
-        print("[OK] Get surroundings test passed")
+    print("[OK] Get surroundings test passed")
 
 def testgridstats():
     
-    grid = Grid(size = 10, obstacle_problem = 0.2, no_fly_zone = 0.1, seedling = 42)
-    stats = grid.get_stats()
+    # Fix: obstacle_prob, no_fly_zone
+    grid = Grid(size = 10, obstacle_prob = 0.2, no_fly_zone = 0.1, seedling = 42)
+    # Fix: statistics
+    stats = grid.statistics()
 
     assert 'total' in stats
     assert 'safe' in stats

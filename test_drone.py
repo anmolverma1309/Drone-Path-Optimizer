@@ -17,7 +17,8 @@ def testDroneCreation():
 
 def testDroneMovement():
     """testing drone initialization"""
-    drone = Drone(startposition = (0, 0), batteryCapacity = 100, move_cost = 1)
+    # Fix: movingCost
+    drone = Drone(startposition = (0, 0), batteryCapacity = 100, movingCost = 1)
 
     initial_battery = drone.battery
     success = drone.move((0, 1))
@@ -32,7 +33,8 @@ def testDroneMovement():
 
 def testBatteryDepletion():
     
-    drone = Drone(startposition = (0, 0), batteryCapacity = 3, move_cost = 1)
+    # Fix: movingCost
+    drone = Drone(startposition = (0, 0), batteryCapacity = 3, movingCost = 1)
 
     
 
@@ -41,7 +43,8 @@ def testBatteryDepletion():
     assert drone.move((0, 3)) == True
 
     
-    assert drone.can_move() == False
+    # Fix: canDroneMove
+    assert drone.canDroneMove() == False
 
     print ("[Ok] Battery depletion test passed")
 

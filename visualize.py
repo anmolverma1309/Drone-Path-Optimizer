@@ -7,13 +7,15 @@ import numpy as np
 
 class Dashboard:
 
-    COLORS = {
+    colorpalette = {
         'safe': '#1a1a2e', 
         'obstacle': '#e94560',
         'no_fly': '#ff6b35',
         'path': '#00ff88',
         'drone': '#00d4ff',
         'visited': '#0f3460',
+        # Fix: visitedd -> visited
+        'visitedd': '#0f3460',
         'grid_lines': '#16213e'
     }
 
@@ -26,6 +28,10 @@ class Dashboard:
         self.drone = drone
         self.fig = None
         self.axes = None
+        self.axe_grid = None
+        self.axe_battery = None
+        self.axe_coverage = None
+        self.axe_stats = None
 
     def setupPlot(self):
         
@@ -48,6 +54,9 @@ class Dashboard:
 
         return self.fig
     
+    def _hex_to_rgb(self, hex_color):
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16)/255 for i in (0, 2, 4))
 
     def drawingGrid(self, showPath = True, showDrone = True):
         
@@ -62,16 +71,18 @@ class Dashboard:
                 cell_type = self.grid.grid[thei][thej]
 
 
-                if(thei, thej) in self.drone.visited:
-                    color = self._hex_to_rgb(self.COLORS['visitedd'])
+                if (thei, thej) in self.drone.visited:
+                    # Fix: visited key name
+                    color = self._hex_to_rgb(self.colorpalette['visited'])
 
                 elif cell_type == 0: 
-                    color = self._hex_to_rgb(self.COLORS['safe'])
+                    color = self._hex_to_rgb(self.colorpalette['safe'])
                 
                 elif cell_type == 1:
-                    color = self._hex_to_rbg(self.COLORS['obstacle'])
+                    # Fix: rbg -> rgb
+                    color = self._hex_to_rgb(self.colorpalette['obstacle'])
                 elif cell_type == 2:
-                    color = self._hex_to_rgb(self.COLORS ['no_fly'])
+                    color = self._hex_to_rgb(self.colorpalette ['no_fly'])
 
                 grid_vis[thei][thej] = color
 
@@ -81,23 +92,32 @@ class Dashboard:
         if showPath and len(self.drone.pathHistory) > 1:
             path_array = np.array(self.drone.pathHistory)
             self.axe_grid.plot(path_array[:, 1], path_array[:, 0],
-                               color = self.COLORS['path'], linewidth =2,
+                               color = self.colorpalette['path'], linewidth =2,
                                alpha = 0.7, marker = 'o', markersize = 3)
             
         if showDrone:
             drone_row, droneCol = self.drone.position
+            # Fix: invalid args to Circle? No, (x,y) tuple is 1st arg. (droneCol, drone_row) is correct.
             circle = patches.Circle((droneCol, drone_row), 0.4,
-                                    color = self.COLORS['drone'], zorder = 10)
+                                    color = self.colorpalette['drone'], zorder = 10)
             
             self.axe_grid.add_patch(circle)
+            # Fix: haa/vaa -> ha/va
             self.axe_grid.text(droneCol, drone_row, 'D',
-                               haa = 'center', vaa = 'center', fontsize = 12, fontweight = 'bold', color = 'white', zorder = 11)
+                               ha = 'center', va = 'center', fontsize = 12, fontweight = 'bold', color = 'white', zorder = 11)
         
         self.axe_grid.set_xlim(-0.5, self.grid.size - 0.5)
         self.axe_grid.set_ylim(self.grid.size - 0.5, -0.5)
         self.axe_grid.set_xticks(range(self.grid.size))
         self.axe_grid.set_yticks(range(self.grid.size))
-        self.axe_grid.grid(True, color = self.COLORS['grid_lines'], linewidth = 0.5)
+        self.axe_grid.grid(True, color = self.colorpalette['grid_lines'], linewidth = 0.5)
+
+    def update(self):
+        # Wrapper for update logic if needed, or just redraw grid
+        self.drawingGrid()
+
+    def show(self):
+        plt.show()
         self.axe_grid.set_title('Surveillance grid',
                        color = 'white', fontsize = 14, fontweight = 'bold')
         self.axe_grid.set_facecolor('#0a0a0a')
@@ -133,7 +153,7 @@ class Dashboard:
 
         
         self.axe_coverage.barh([0], [coverage_part], height = 0.5,
-                               color = self.COLORS['path'])
+                               color = self.colorpalette['path'])
         self.axe_coverage.barh([0], [100 - coverage_part], left = [coverage_part],
                                height = 0.5, color = '#1a1a1a')
         self.axe_coverage.set_xlim (0, 100)

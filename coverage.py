@@ -1,11 +1,10 @@
 
-
 import numpy as np
 from a_star import a_star_search, findTheNearestUnvisited
 
 class CoveragePlanner:
 
-    def __Planner__(planning, griding, drone):
+    def __init__(planning, griding, drone):
 
         planning.grid = griding
         planning.drone = drone
@@ -43,7 +42,8 @@ class CoveragePlanner:
         
 
         if battery_limit is None:
-            bettery_limit = plan.drone.battery_capacity * 0.2 
+            # Fix variable name typo
+            battery_limit = plan.drone.batteryCapacity * 0.2 
 
         fullPath = []
         unvisited = plan.gettingUnvisitedSafeCells()
@@ -75,7 +75,7 @@ class CoveragePlanner:
         unvisited = self.gettingUnvisitedSafeCells()
         path = []
 
-        while unvisited and self.drone.can_move():
+        while unvisited and self.drone.canDroneMove():
             
             best_cell = None
             best_score = -1
@@ -93,8 +93,8 @@ class CoveragePlanner:
                 if not cell_path:
                     continue
 
-                
-                score = sum(1 for surrounding in self.grid.get_surroundings(cell)
+                # Fix: call grid.surroundings
+                score = sum(1 for surrounding in self.grid.surroundings(cell)
                             if surrounding in unvisited)
                 
                
@@ -145,7 +145,8 @@ if __name__ == "__main__":
     planner = CoveragePlanner(grid, drone)
 
     print("Testing adaptive coverage....")
-    path = planner.plan_adaptivecoverage(battery_limit = 20)
+    # Fix method name call case sensitivity
+    path = planner.plan_adaptiveCoverage(battery_limit = 20)
 
 
     print(f"[OK] Generated path with {len(path)} steps")

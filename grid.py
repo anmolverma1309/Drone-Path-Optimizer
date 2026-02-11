@@ -1,5 +1,4 @@
 
-
 import numpy as np
 import random
 
@@ -17,12 +16,12 @@ class Grid:
 
         if seedling is not None:
             np.random.seed(seedling)
-            random.seedling(seedling)
+            random.seed(seedling)
 
         thegreedygrid.grid = None
         thegreedygrid.generateTheGrid()
 
-    def generatethegrid(thegreedygrid):
+    def generateTheGrid(thegreedygrid):
         thegreedygrid.grid = np.zeros((thegreedygrid.size, thegreedygrid.size), dtype = int)
 
         for i in range(thegreedygrid.size):
@@ -42,6 +41,11 @@ class Grid:
         if row < 0 or row >= self.size or col < 0 or col >= self.size:
             return False
             
+        # Fix: Check for obstacles and no-fly zones
+        cell_value = self.grid[row][col]
+        if cell_value == 1 or cell_value == 2:
+            return False
+
         return True
         
     def surroundings (ownself, pos):
@@ -78,6 +82,7 @@ class Grid:
     
     def statistics(stats):
         totalcells = stats.size * stats.size
+        # Fix: np.sum returns a numpy scalar, convert to int for cleaner output if needed, but numpy scalar behaves like int mostly.
         safecells = np.sum (stats.grid == 0)
         obstaclecells = np.sum(stats.grid == 1)
         noflycell = np.sum (stats.grid == 2)
@@ -99,8 +104,9 @@ if __name__ == "__main__":
 
     print(f"Grid Size : {grid.size}x{grid.size}")
     print(f"Total Cells: {stats['total']}")
-    print(f"Safe Cells: {stats['safe']}({stats['safe percent']:.1f}%)")
+    # Fix: use safe% key
+    print(f"Safe Cells: {stats['safe']}({stats['safe%']:.1f}%)")
     print(f"Obstacles: {stats['obstacles']}")
     print(f"No-Fly Zones: {stats['no_fly']}")
-    print("\nSample grid (first 10x10)")
+    print("\\nSample grid (first 10x10)")
     print(grid.grid[:10, :10])

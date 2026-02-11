@@ -1,5 +1,4 @@
 
-
 class Drone:
 
     def __init__(ownself, startposition, batteryCapacity = 100, movingCost = 1):
@@ -67,7 +66,7 @@ if __name__ == "__main__":
     print("===Drone Model demo")
     print("-" *40)
 
-    drone = Drone (startposition = (0, 0), batteryCapacity = 100, movingcost = 1)
+    drone = Drone (startposition = (0, 0), batteryCapacity = 100, movingCost = 1)
 
     print (f"Start Position: {drone.position}")
     print(f"Battery: {drone.battery}%")
@@ -81,6 +80,7 @@ if __name__ == "__main__":
     status = drone.gettingStatus()
     print("\n=== Final Status ===")
     print(f"Position: {status['position']}")
-    print(f"Battery : {status['Batterylife']:.1f}%")
-    print(f"Coverage: {status['Coverage']}cells")
-    print(f"Path Length: {status['PathLength']}steps")
+    # Fix key access to match gettingStatus return dict
+    print(f"Battery : {status['battery_percentage']:.1f}%")
+    print(f"Coverage: {status['coverage']}cells")
+    print(f"Path Length: {status['path_length']}steps")

@@ -2,7 +2,8 @@
 
 import sys 
 import os 
-sys.path.insert(0, os.path.abspath(os.path.join.dirname(__file__), '..'))
+# Fix: os.path logic
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from grid import Grid
 from a_star import a_star_search, distance
@@ -18,6 +19,7 @@ def testDistance():
 
 def testPathonemptyGrid():
     
+    # Fix: obstacle_prob, no_fly_zone
     grid = Grid(size = 5, obstacle_prob = 0, no_fly_zone = 0)
 
     start = (0, 0)
@@ -34,6 +36,7 @@ def testPathonemptyGrid():
 
 def testpathwithObstacles():
     
+    # Fix: seedling
     grid = Grid (size = 5, seedling = 42)
 
     
@@ -59,12 +62,13 @@ def testpathwithObstacles():
 
 
 def testnopathExists():
-    
+
     grid = Grid (size = 5, obstacle_prob = 0, no_fly_zone = 0)
 
     
     for i in range(5):
-        grid.grid[2][1] = 1
+        # Fix: Create a vertical wall at column 2
+        grid.grid[i][2] = 1
 
     start = (0, 0)
     goal = (4, 4)
@@ -75,6 +79,7 @@ def testnopathExists():
     print("[OK] No path detection test passed")
 
 def testinvalidStartorGoal():
+    # Fix: seedling
     grid = Grid(size = 5, seedling = 42)
 
     grid.grid[0][0] = 1
