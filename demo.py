@@ -28,25 +28,22 @@ class LiveDemo:
         self.grid = Grid(
             size=grid_size,
             obstacle_prob=0.12,  # 12% chance of obstacles
-            no_fly_zone=0.06,    # 6% chance of no-fly zones (Fix: name is no_fly_zone)
-            seedling=seed        # Fix: name is seedling
+            no_fly_zone=0.06,    # 6% chance of no-fly zones
+            seedling=seed
         )
         
         # Make sure starting position is clear
-        # Fix: name is setstartposition
         self.grid.setstartposition((0, 0))
         
         # Create the drone
-        # Fix: names are startposition, batteryCapacity
-        self.drone = Drone(startposition=(0, 0), batteryCapacity=battery)
+        self.drone = Drone(startposition=(0, 0), battery_capacity=battery)
         
         # Create the coverage planner
         self.planner = CoveragePlanner(self.grid, self.drone)
         
         # Generate the full coverage path
         # Keep 20 units of battery as reserve
-        # Fix: name is plan_adaptiveCoverage
-        self.full_path = self.planner.plan_adaptiveCoverage(battery_limit=20)
+        self.full_path = self.planner.plan_adaptive_coverage(battery_limit=20)
         
         # Track which step we're on
         self.current_step = 0
@@ -107,8 +104,7 @@ class LiveDemo:
         # Check if mission is complete
         if self.current_step >= len(self.full_path):
             # Get final drone status
-            # Fix: name is gettingStatus
-            status = self.drone.gettingStatus()
+            status = self.drone.get_status()
             
             # Calculate final coverage percentage
             total_safe = 0
@@ -117,7 +113,6 @@ class LiveDemo:
                     if self.grid.grid[i][j] == 0:
                         total_safe = total_safe + 1
             
-            # Fix: key is coverage
             coverage_pct = (status['coverage'] / total_safe) * 100
             
             # Create completion message
@@ -128,7 +123,6 @@ class LiveDemo:
             """
             
             # Display completion message on the grid
-            # Fix: axe_grid
             self.dashboard.axe_grid.text(
                 self.grid.size / 2,  # X position (center)
                 -1.5,  # Y position (above grid)
@@ -156,28 +150,24 @@ class LiveDemo:
         print("DRONE PATH OPTIMIZER - LIVE DEMO")
         print("=" * 50)
         print(f"Grid Size: {self.grid.size}x{self.grid.size}")
-        print(f"Battery Capacity: {self.drone.batteryCapacity}")
+        print(f"Battery Capacity: {self.drone.battery_capacity}")
         print(f"Planned Path Length: {len(self.full_path)} steps")
         
         # Get and display grid statistics
-        # Fix: statistics
         grid_stats = self.grid.statistics()
-        print(f"\\nGrid Statistics:")
-        # Fix: safe% key (check grid.py)
+        print(f"\nGrid Statistics:")
         print(f"  Safe Cells: {grid_stats['safe']} ({grid_stats['safe%']:.1f}%)")
         print(f"  Obstacles: {grid_stats['obstacles']}")
         print(f"  No-Fly Zones: {grid_stats['no_fly']}")
         
         # Calculate expected coverage
-        # Fix: estimatecoveragePercent
-        estimated_coverage = self.planner.estimatecoveragePercent(self.full_path)
-        print(f"\\nExpected Coverage: {estimated_coverage:.1f}%")
-        print("\\nStarting animation...")
+        estimated_coverage = self.planner.estimate_coverage_percent(self.full_path)
+        print(f"\nExpected Coverage: {estimated_coverage:.1f}%")
+        print("\nStarting animation...")
         print("-" * 50)
         
         # Set up the dashboard
-        # Fix: setupPlot
-        self.dashboard.setupPlot()
+        self.dashboard.setup_plot()
         
         # Create the animation
         # Calculate total frames (path length + extra frames to show completion)
@@ -210,19 +200,15 @@ def static_demo():
     print("-" * 40)
     
     # Create grid
-    # Fix: seedling
     grid = Grid(size=15, obstacle_prob=0.15, seedling=42)
-    # Fix: setstartposition
     grid.setstartposition((0, 0))
     
     # Create drone
-    # Fix: startposition, batteryCapacity
-    drone = Drone(startposition=(0, 0), batteryCapacity=150)
+    drone = Drone(startposition=(0, 0), battery_capacity=150)
     
     # Plan coverage path
     planner = CoveragePlanner(grid, drone)
-    # Fix: plan_adaptiveCoverage
-    path = planner.plan_adaptiveCoverage(battery_limit=15)
+    path = planner.plan_adaptive_coverage(battery_limit=15)
     
     # Execute path (limit to 100 steps for quick demo)
     max_steps = min(len(path), 100)
@@ -232,9 +218,8 @@ def static_demo():
     
     # Show final result
     dashboard = Dashboard(grid, drone)
-    # Fix: setupPlot, show
-    dashboard.setupPlot()
-    dashboard.drawingGrid()
+    dashboard.setup_plot()
+    dashboard.draw_grid()
     dashboard.show()
 
 
@@ -252,21 +237,16 @@ def comparison_demo():
     # Test each strategy
     for strategy in strategies:
         # Create fresh components for each test
-        # Fix: seedling
         grid = Grid(size=15, obstacle_prob=0.15, seedling=42)
-        # Fix: setstartposition
         grid.setstartposition((0, 0))
-        # Fix: startposition, batteryCapacity
-        drone = Drone(startposition=(0, 0), batteryCapacity=120)
+        drone = Drone(startposition=(0, 0), battery_capacity=120)
         planner = CoveragePlanner(grid, drone)
         
         # Plan path using selected strategy
         if strategy == 'adaptive':
-            # Fix: plan_adaptiveCoverage
-            path = planner.plan_adaptiveCoverage(battery_limit=15)
+            path = planner.plan_adaptive_coverage(battery_limit=15)
         else:
-            # Fix: planGreedyCoverage
-            path = planner.planGreedyCoverage(look_ahead=5)
+            path = planner.plan_greedy_coverage(look_ahead=5)
         
         # Execute the path
         for pos in path:
@@ -276,8 +256,7 @@ def comparison_demo():
                 break
         
         # Get final statistics
-        # Fix: gettingStatus
-        status = drone.gettingStatus()
+        status = drone.get_status()
         
         # Calculate coverage percentage
         total_safe = 0
@@ -286,12 +265,10 @@ def comparison_demo():
                 if grid.grid[i][j] == 0:
                     total_safe = total_safe + 1
         
-        # Fix: coverage key
         coverage = (status['coverage'] / total_safe) * 100
         
         # Store results
-        # Fix: batteryCapacity
-        battery_used = drone.batteryCapacity - status['battery']
+        battery_used = drone.battery_capacity - status['battery']
         results.append({
             'strategy': strategy,
             'coverage': coverage,
@@ -300,7 +277,7 @@ def comparison_demo():
         })
         
         # Print results for this strategy
-        print(f"\\n{strategy.upper()} Strategy:")
+        print(f"\n{strategy.upper()} Strategy:")
         print(f"  Coverage: {coverage:.1f}%")
         print(f"  Battery Used: {battery_used}")
         print(f"  Path Length: {status['path_length']}")

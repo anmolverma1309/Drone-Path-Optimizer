@@ -3,45 +3,40 @@ import heapq
 
 class Node:
 
-    def __init__ (pathing, posture, goals = 0, h = 0, parentzz = None):
+    def __init__(self, posture, g=0, h=0, parent=None):
+        self.posture = posture
+        self.g = g
+        self.h = h 
+        self.f = g + h 
+        self.parent = parent
 
 
-        pathing.posture = posture
-        pathing.goals = goals
-        pathing.h = h 
-        pathing.f = goals+h 
-        pathing.parent = parentzz
-
-
-    def __lt__(prior, other):
-        return prior.f < other.f
+    def __lt__(self, other):
+        return self.f < other.f
     
 
-    def __eq__(equal, other):
-        return equal.posture == other.posture
+    def __eq__(self, other):
+        return self.posture == other.posture
     
-    def __hash__ (hashoperation):
-        return hash(hashoperation.posture)
+    def __hash__(self):
+        return hash(self.posture)
     
 def distance(posture1, posture2):
-    
     return abs(posture1[0] - posture2[0]) + abs(posture1[1] - posture2[1])
 
 
 def a_star_search(grid, start, goal):
-
     
     if not grid.isvalid(start) or not grid.isvalid(goal):
         return None
     
-   
-    start_node = Node(start, goals = 0, h= distance(start,goal))
-    openset = []
-    heapq.heappush (openset, start_node)
-
+    start_node = Node(start, g=0, h=distance(start, goal))
     
+    openset = []
+    heapq.heappush(openset, start_node)
+
     visited = set()
-    costsofar = {start: 0}
+    cost_so_far = {start: 0}
 
     while openset:
         current = heapq.heappop(openset)
@@ -49,31 +44,26 @@ def a_star_search(grid, start, goal):
         if current.posture == goal:
             return reconstruct_path(current)
         
-        
         if current.posture in visited:
             continue
 
         visited.add(current.posture)
 
-        
-        for surroundingposture in grid.surroundings(current.posture):
-            newcost = current.goals + 1 
+        for surrounding_posture in grid.surroundings(current.posture):
+            new_cost = current.g + 1 
 
-            if surroundingposture in costsofar and newcost >= costsofar[surroundingposture]:
+            if surrounding_posture in cost_so_far and new_cost >= cost_so_far[surrounding_posture]:
                 continue
 
-            h = distance(surroundingposture, goal)
-            surrounding_node = Node(surroundingposture, goals = newcost, h = h , parentzz = current)
+            h = distance(surrounding_posture, goal)
+            surrounding_node = Node(surrounding_posture, g=new_cost, h=h, parent=current)
 
-            costsofar[surroundingposture] = newcost
+            cost_so_far[surrounding_posture] = new_cost
             heapq.heappush(openset, surrounding_node)
 
-    
     return None
 
 def reconstruct_path(node):
-    
-
     path = []
     current = node
 
@@ -84,23 +74,20 @@ def reconstruct_path(node):
     path.reverse()
     return path
 
-def findTheNearestUnvisited(grid, drone, unvisited_cells):
-    
-
-
+def find_the_nearest_unvisited(grid, drone, unvisited_cells):
     if not unvisited_cells:
         return None, None
+    
     current_position = drone.position
     best_position = None
     best_path = None
     best_distance = float('inf')
 
     sorted_cells = sorted(unvisited_cells,
-                          key = lambda posture: distance (current_position, posture))
+                          key=lambda posture: distance(current_position, posture))
     
-
     for target in sorted_cells[:10]:
-        path = a_star_search (grid, current_position, target)
+        path = a_star_search(grid, current_position, target)
         if path and len(path) < best_distance:
             best_distance = len(path)
             best_position = target
@@ -116,7 +103,7 @@ if __name__ == "__main__":
     print("=== A* Pathfinding Demo ===")
     print("-" * 40)
 
-    grid = Grid (size = 10, obstacle_prob = 0.2, seedling = 42)
+    grid = Grid(size=10, obstacle_prob=0.2, seedling=42)
     grid.setstartposition((0, 0))
 
     start = (0, 0)
@@ -133,18 +120,18 @@ if __name__ == "__main__":
         print("[Fail] No path exists!")
 
 
-    print("\nGrid (X=obstacle, S=start, Goals=goal, *=path):")
-    for i in range (grid.size):
+    print("\nGrid (X=obstacle, S=start, G=goal, *=path):")
+    for i in range(grid.size):
         rowstr = ""
         for j in range(grid.size):
             posture = (i, j)
             if posture == start:
                 rowstr += "S "
             elif posture == goal:
-                rowstr += "Goals "
+                rowstr += "G "
             elif path and posture in path:
                 rowstr += "* "
-            elif grid.grid[i][j]  == 1:
+            elif grid.grid[i][j] == 1:
                 rowstr += "X "
             else: 
                 rowstr += ". "
