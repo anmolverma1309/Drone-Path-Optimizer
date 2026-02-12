@@ -67,6 +67,28 @@ class Grid:
         if 0 <= row < self.size and 0 <= col < self.size:
             self.grid[row][col] = 0
     
+    def set_cell(self, pos, value):
+        """Set a specific cell to a given value (0=safe, 1=obstacle, 2=no-fly)"""
+        row, col = pos
+        if 0 <= row < self.size and 0 <= col < self.size:
+            self.grid[row][col] = value
+            return True
+        return False
+    
+    def toggle_obstacle(self, pos):
+        """Toggle a cell between safe (0) and obstacle (1)"""
+        row, col = pos
+        if 0 <= row < self.size and 0 <= col < self.size:
+            current = self.grid[row][col]
+            # Toggle between safe and obstacle
+            if current == 0:
+                self.grid[row][col] = 1
+            elif current == 1:
+                self.grid[row][col] = 0
+            # Don't toggle no-fly zones
+            return True
+        return False
+    
     def statistics(self):
         totalcells = self.size * self.size
         # Count cells

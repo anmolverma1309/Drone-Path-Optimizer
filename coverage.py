@@ -33,7 +33,7 @@ class CoveragePlanner:
                     coverage_path.append(target)
         return coverage_path
     
-    def plan_adaptive_coverage(self, battery_limit=None):
+    def plan_adaptive_coverage(self, battery_limit=None, end_point=None):
         if battery_limit is None:
             battery_limit = self.drone.battery_capacity * 0.2 
 
@@ -41,13 +41,36 @@ class CoveragePlanner:
         unvisited = self.get_unvisited_safe_cells()
 
         while unvisited and self.drone.battery > battery_limit:
+            # If we have an endpoint, reserve battery to reach it
+            if end_point:
+                from a_star import distance, a_star_search
+                # Calculate distance to endpoint
+                dist_to_end = distance(self.drone.position, end_point)
+                # Reserve battery with safety margin
+                reserve = dist_to_end * 1.5
+                
+                # If we're running low on battery, navigate to endpoint
+                if self.drone.battery < reserve + battery_limit + 10:
+                    path_to_end = a_star_search(self.grid, self.drone.position, end_point)
+                    if path_to_end and len(path_to_end) > 1:
+                        full_path.extend(path_to_end[1:])
+                    break
+            
             target_posture, path = find_the_nearest_unvisited(self.grid, self.drone, unvisited)
 
             if path is None:
                 break
 
             path_cost = len(path) - 1 
-            if self.drone.battery < path_cost + battery_limit:
+            
+            # Check if we have enough battery (including endpoint reserve if applicable)
+            effective_limit = battery_limit
+            if end_point:
+                from a_star import distance
+                dist_to_end = distance(self.drone.position, end_point)
+                effective_limit = battery_limit + dist_to_end * 1.5
+            
+            if self.drone.battery < path_cost + effective_limit:
                 break 
 
             full_path.extend(path[1:])
@@ -57,6 +80,7 @@ class CoveragePlanner:
                     unvisited.remove(posture)
 
         return full_path
+
 
     def plan_greedy_coverage(self, look_ahead=5):
         unvisited = self.get_unvisited_safe_cells()

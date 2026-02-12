@@ -45,6 +45,10 @@ class Dashboard:
 
         self.fig.patch.set_facecolor('#0a0a0a')
         
+        # Remove 's' from save keymap to prevent conflict
+        if 's' in plt.rcParams['keymap.save']:
+            plt.rcParams['keymap.save'].remove('s')
+
         # Connect event handlers for interactivity
         self.fig.canvas.mpl_connect('button_press_event', self.on_click)
         self.fig.canvas.mpl_connect('key_press_event', self.on_key)
@@ -104,6 +108,8 @@ class Dashboard:
 
     def update(self):
         self.draw_grid()
+        self.draw_destination()  # Ensure destination is redrawn
+        self.draw_optimal_path() # Ensure optimal path is redrawn
         self.draw_battery()
         self.draw_coverage()
         self.draw_stats()

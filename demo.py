@@ -15,15 +15,18 @@ class LiveDemo:
     It shows the drone moving through the grid in real-time
     """
     
-    def __init__(self, grid_size=20, battery=200, seed=None):
+    def __init__(self, grid_size=20, seed=None, interactive=True):
         """
         Initialize the live demo
         
         Parameters:
             grid_size: Size of the grid (creates grid_size x grid_size grid)
-            battery: Battery capacity for the drone
             seed: Random seed for reproducible results
+            interactive: If True, enable interactive controls for destination/obstacles
         """
+        # Calculate battery to cover entire grid with safety margin
+        battery = grid_size * grid_size * 2
+        
         # Create the grid environment
         self.grid = Grid(
             size=grid_size,
@@ -41,9 +44,12 @@ class LiveDemo:
         # Create the coverage planner
         self.planner = CoveragePlanner(self.grid, self.drone)
         
-        # Generate the full coverage path
-        # Keep 20 units of battery as reserve
-        self.full_path = self.planner.plan_adaptive_coverage(battery_limit=20)
+        # Interactive mode settings
+        self.interactive = interactive
+        self.destination = None
+        self.optimal_path = None
+        self.full_path = None
+        self.is_started = False
         
         # Track which step we're on
         self.current_step = 0
@@ -54,6 +60,26 @@ class LiveDemo:
         # Animation control variables
         self.paused = False
         self.speed = 1  # How many steps to execute per frame
+    
+    def generate_path(self):
+        """Generate the coverage path based on current settings"""
+        # Use dashboard destination as the source of truth
+        destination = self.dashboard.destination
+        
+        # Generate the full coverage path with optional destination
+        # Keep 20 units of battery as reserve
+        self.full_path = self.planner.plan_adaptive_coverage(
+            battery_limit=20, 
+            end_point=destination
+        )
+        
+        # If destination is set, calculate optimal path for visualization
+        if destination:
+            from a_star import a_star_search
+            self.optimal_path = a_star_search(self.grid, (0, 0), destination)
+            self.dashboard.optimal_path = self.optimal_path
+        
+        self.current_step = 0
     
     def step(self):
         """
@@ -87,22 +113,24 @@ class LiveDemo:
         Parameters:
             frame: Frame number (provided by FuncAnimation)
         """
-        # Only update if not paused
-        if not self.paused:
-            # Execute multiple steps per frame based on speed setting
-            for i in range(self.speed):
-                # Try to execute a step
-                step_result = self.step()
-                
-                # If step failed, stop trying more steps
-                if not step_result:
-                    break
+        # Only update if not paused and simulation is started (for interactive mode)
+        if not self.paused and (not self.interactive or self.is_started):
+            # Only execute if we have a path
+            if self.full_path:
+                # Execute multiple steps per frame based on speed setting
+                for i in range(self.speed):
+                    # Try to execute a step
+                    step_result = self.step()
+                    
+                    # If step failed, stop trying more steps
+                    if not step_result:
+                        break
         
         # Update the dashboard to show current state
         self.dashboard.update()
         
-        # Check if mission is complete
-        if self.current_step >= len(self.full_path):
+        # Check if mission is complete (only if we have a path)
+        if self.full_path and self.current_step >= len(self.full_path):
             # Get final drone status
             status = self.drone.get_status()
             
@@ -137,6 +165,11 @@ class LiveDemo:
                     alpha=0.8
                 )
             )
+        
+        # Draw optimal path if available
+        if self.is_started and self.dashboard.destination:
+            self.dashboard.draw_optimal_path()
+    
     
     def run(self, interval=50, save_gif=False):
         """
@@ -188,6 +221,97 @@ class LiveDemo:
             print("Saved!")
         
         # Show the animation window
+        plt.show()
+    
+    def run_interactive(self, interval=50):
+        """
+        Run the demo in interactive mode with user controls
+        """
+        print("DRONE PATH OPTIMIZER - INTERACTIVE MODE")
+        print("=" * 50)
+        print(f"Grid Size: {self.grid.size}x{self.grid.size}")
+        print(f"Battery Capacity: {self.drone.battery_capacity}")
+        
+        # Get grid statistics
+        grid_stats = self.grid.statistics()
+        print(f"\nGrid Statistics:")
+        print(f"  Safe Cells: {grid_stats['safe']} ({grid_stats['safe%']:.1f}%)")
+        print(f"  Obstacles: {grid_stats['obstacles']}")
+        print(f"  No-Fly Zones: {grid_stats['no_fly']}")
+        
+        print("\n" + "=" * 50)
+        print("INSTRUCTIONS:")
+        print("  > Click on grid to set DESTINATION")
+        print("  > Hover over cell + Press 'o' to TOGGLE OBSTACLE")
+        print("  > Press 's' to START simulation")
+        print("  > Press 'r' to RESET")
+        print("=" * 50 + "\n")
+        
+        # Set up the dashboard
+        self.dashboard.setup_plot()
+        
+        # Draw the initial grid so user can see and interact with it
+        self.dashboard.draw_grid()
+        
+        # Add key handler for start
+        # Add key handler for start
+        def on_key_start(event):
+            if event.key == 's':
+                if not self.is_started:
+                    if self.dashboard.destination:
+                        print(f"\n[STARTED] Simulation starting... Target: {self.dashboard.destination}")
+                        self.generate_path()
+                        if self.full_path:
+                            self.is_started = True
+                            print(f"[INFO] Path found: {len(self.full_path)} steps")
+                            
+                            # Calculate expected coverage
+                            estimated_coverage = self.planner.estimate_coverage_percent(self.full_path)
+                            print(f"[INFO] Expected Coverage: {estimated_coverage:.1f}%")
+                        else:
+                            print("[ERROR] Could not generate a valid path!")
+                    else:
+                        print("\n[!] Please click on the grid to set a DESTINATION first.")
+                        # Visual feedback on graph
+                        self.dashboard.axe_grid.text(
+                            self.grid.size / 2, self.grid.size / 2, 
+                            "CLICK TO SET DESTINATION", 
+                            color='red', fontsize=14, fontweight='bold', ha='center',
+                            bbox=dict(facecolor='black', alpha=0.7)
+                        )
+                        self.dashboard.fig.canvas.draw_idle()
+                else:
+                    print("\n[INFO] Simulation is already running.")
+
+            elif event.key == 'r':
+                print("\n[RESET] Simulation reset.")
+                self.is_started = False
+                self.current_step = 0
+                self.drone.reset()
+                self.dashboard.destination = None  # Clear destination
+                self.dashboard.draw_grid()
+                print("[INFO] Destination cleared.")
+                self.dashboard.fig.canvas.draw_idle()
+                
+            elif event.key == 'q':
+                print("\n[QUIT] Exiting...")
+                plt.close(self.dashboard.fig)
+        
+        # Connect the start handler
+        self.dashboard.fig.canvas.mpl_connect('key_press_event', on_key_start)
+        
+        # Create the animation
+        total_frames = 10000  # Large number so it runs until completion
+        
+        anim = FuncAnimation(
+            self.dashboard.fig,
+            self.animate,
+            interval=interval,
+            blit=False,
+            frames=total_frames
+        )
+        
+        # Show the window
         plt.show()
 
 
@@ -301,6 +425,6 @@ if __name__ == "__main__":
             print(f"Unknown mode: {mode}")
             print("Usage: python demo.py [static|compare]")
     else:
-        # Default: Run the full live animated demo
-        demo = LiveDemo(grid_size=20, battery=200, seed=42)
-        demo.run(interval=50, save_gif=False)
+        # Default: Run interactive mode
+        demo = LiveDemo(grid_size=20, seed=42, interactive=True)
+        demo.run_interactive(interval=50)
