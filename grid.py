@@ -28,6 +28,50 @@ class Grid:
                     self.grid[i][j] = 1
                 elif rand_val < self.obstacle_prob + self.no_fly_zone:
                     self.grid[i][j] = 2
+    
+    def load_scenario(self, scenario_type):
+        """Load a specific scenario type"""
+        self.grid = np.zeros((self.size, self.size), dtype=int)
+        
+        if scenario_type == 'Random':
+            self.generateTheGrid()
+            
+        elif scenario_type == 'Maze':
+            # recursive backtracking or just detailed noise
+            for i in range(self.size):
+                if i % 2 == 1:
+                    for j in range(self.size - 2):
+                        self.grid[i][j] = 1
+                if i % 4 == 3:
+                     self.grid[i][0] = 0 # opening
+                     self.grid[i][self.size-3] = 1
+        
+        elif scenario_type == 'Narrow Passage':
+            # Wall in middle with one gap
+            mid = self.size // 2
+            for i in range(self.size):
+                self.grid[i][mid] = 1
+            self.grid[mid][mid] = 0 # Gap
+            
+        elif scenario_type == 'Trap':
+            # U-shape
+            center = self.size // 2
+            radius = 3
+            for i in range(center-radius, center+radius+1):
+                self.grid[i][center-radius] = 1 # Left
+                self.grid[i][center+radius] = 1 # Right
+                self.grid[center+radius][i] = 1 # Bottom
+                
+        elif scenario_type == 'Open':
+            # Empty grid with very few obstacles
+            # Just borders maybe? Na, just random low prob
+            self.obstacle_prob = 0.05
+            self.no_fly_zone = 0.0
+            self.generateTheGrid()
+            
+        # Ensure start is safe
+        self.setstartposition((0, 0))
+
         
     def isvalid(self, pos):
         row, col = pos
