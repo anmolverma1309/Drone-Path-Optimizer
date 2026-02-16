@@ -333,49 +333,7 @@ class LiveDemo:
 
     
 
-        # Print initial statistics
-        print("DRONE PATH OPTIMIZER - LIVE DEMO")
-        print("=" * 50)
-        print(f"Grid Size: {self.grid.size}x{self.grid.size}")
-        print(f"Battery Capacity: {self.drone.battery_capacity}")
-        print(f"Planned Path Length: {len(self.full_path)} steps")
-        
-        # Get and display grid statistics
-        grid_stats = self.grid.statistics()
-        print(f"\nGrid Statistics:")
-        print(f"  Safe Cells: {grid_stats['safe']} ({grid_stats['safe%']:.1f}%)")
-        print(f"  Obstacles: {grid_stats['obstacles']}")
-        print(f"  No-Fly Zones: {grid_stats['no_fly']}")
-        
-        # Calculate expected coverage
-        estimated_coverage = self.planner.estimate_coverage_percent(self.full_path)
-        print(f"\nExpected Coverage: {estimated_coverage:.1f}%")
-        print("\nStarting animation...")
-        print("-" * 50)
-        
-        # Set up the dashboard
-        self.dashboard.setup_plot()
-        
-        # Create the animation
-        # Calculate total frames (path length + extra frames to show completion)
-        total_frames = len(self.full_path) + 10
-        
-        anim = FuncAnimation(
-            self.dashboard.fig,  # Figure to animate
-            self.animate,  # Update function
-            interval=interval,  # Time between frames in milliseconds
-            blit=False,  # Don't use blitting (redraw everything)
-            frames=total_frames
-        )
-        
-        # Save as GIF if requested
-        if save_gif:
-            print("Saving animation as 'drone_demo.gif'...")
-            anim.save('drone_demo.gif', writer='pillow', fps=20)
-            print("Saved!")
-        
-        # Show the animation window
-        plt.show()
+
 
     def trigger_emergency_return(self):
         """Abort mission and return to start"""

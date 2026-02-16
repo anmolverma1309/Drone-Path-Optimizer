@@ -1,8 +1,8 @@
 
-
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
+import matplotlib.cm as cm
 
 class Dashboard:
 
@@ -28,20 +28,27 @@ class Dashboard:
         self.axe_battery = None
         self.axe_coverage = None
         self.axe_stats = None
+        self.axe_metrics = None  # NEW: Enhanced metrics panel
         self.optimal_path = None
         self.destination = None
         self.hover_pos = None
+        self.current_path = []  # Track current path for metrics
+        self.metrics_data = None  # Cache metrics calculations
+        self.replanning_callback = None # Callback for obstacle updates
+        self.radio = None # Widget reference
 
     def setup_plot(self):
-        self.fig = plt.figure(figsize=(16, 6))
+        self.fig = plt.figure(figsize=(20, 8))  # Larger to fit enhanced metrics
         
-        gridzz = self.fig.add_gridspec(2, 3, width_ratios=[2, 1, 1],
-                                       height_ratios=[1, 1], hspace=0.3, wspace=0.3)
+        # Updated grid layout: 3 rows, 3 columns
+        gridzz = self.fig.add_gridspec(3, 3, width_ratios=[2, 1, 1],
+                                       height_ratios=[1.2, 0.8, 0.8], hspace=0.35, wspace=0.3)
         
-        self.axe_grid = self.fig.add_subplot(gridzz[:, 0])
+        self.axe_grid = self.fig.add_subplot(gridzz[:, 0])  # Grid takes left 2 rows
         self.axe_battery = self.fig.add_subplot(gridzz[0, 1])
         self.axe_coverage = self.fig.add_subplot(gridzz[0, 2])
-        self.axe_stats = self.fig.add_subplot(gridzz[1, 1:])
+        self.axe_stats = self.fig.add_subplot(gridzz[1, 1:])  # Stats take row 2, cols 2-3
+        self.axe_metrics = self.fig.add_subplot(gridzz[2, 1:])  # NEW: Enhanced metrics row 3
 
         self.fig.patch.set_facecolor('#0a0a0a')
         
@@ -55,22 +62,75 @@ class Dashboard:
         self.fig.canvas.mpl_connect('motion_notify_event', self.on_hover)
 
         return self.fig
+
+    def setup_widgets(self, scenario_callback):
+        """Setup interactive widgets"""
+        from matplotlib.widgets import RadioButtons, Button
+        
+        # Adjust layout to make room for widgets if needed, 
+        # but for now we'll put them in a dedicated area
+        
+        # Scenario Selector
+        # use self.fig to add axes
+        ax_radio = plt.axes([0.02, 0.6, 0.12, 0.15], facecolor='#1a1a1a') # [left, bottom, width, height]
+        self.radio = RadioButtons(ax_radio, ('Random', 'Maze', 'Trap', 'Narrow', 'Open'), activecolor='#00ff88')
+        
+        # Style the radio buttons
+        for label in self.radio.labels:
+            label.set_color('white')
+            label.set_fontsize(10)
+            
+        self.radio.on_clicked(scenario_callback)
+        
+        # Add title
+        self.fig.text(0.02, 0.76, "SCENARIOS", color='white', fontweight='bold', fontsize=10)
+
     
     def _hex_to_rgb(self, hex_color):
         hex_color = hex_color.lstrip('#')
         return tuple(int(hex_color[i:i+2], 16)/255 for i in (0, 2, 4))
 
-    def draw_grid(self, show_path=True, show_drone=True):
+    def draw_grid(self, show_path=True, show_drone=True, drone_pos=None):
+        """Draw the grid, obstacles, and drone"""
         self.axe_grid.clear()
-
+        
+        # Create a colored grid based on cell types
         grid_vis = np.zeros((self.grid.size, self.grid.size, 3))
 
+        
+        # Calculate visit counts for heatmap
+        visit_counts = {}
+        max_visits = 1
+        for pos in self.drone.path_history:
+            visit_counts[pos] = visit_counts.get(pos, 0) + 1
+            max_visits = max(max_visits, visit_counts[pos])
+            
         for thei in range(self.grid.size):
             for thej in range(self.grid.size):
                 cell_type = self.grid.grid[thei][thej]
 
                 if (thei, thej) in self.drone.visited:
-                    color = self._hex_to_rgb(self.colorpalette['visited'])
+                    # Heatmap logic: 
+                    # Base color is 'visited'
+                    # We blend it with a "hot" color based on visit count
+                    count = visit_counts.get((thei, thej), 1)
+                    intensity = min(1.0, count / 5.0) # Cap at 5 visits for max intensity
+                    
+                    # Simple gradient: Dark Blue -> Bright Cyan/White
+                    # base = (15, 52, 96) # #0f3460
+                    # hot = (0, 255, 255) # Cyan
+                    
+                    # Using matplotlib colormap 'viridis' or 'plasma'
+                    # but let's stick to our theme.
+                    # Interpolate between 'visited' and 'path' colors?
+                    
+                    # Manual gradient for control
+                    r = 15 + (0 - 15) * intensity
+                    g = 52 + (255 - 52) * intensity
+                    b = 96 + (212 - 96) * intensity # Towards #00ffd4
+                    
+                    color = (r/255, g/255, b/255)
+                    
                 elif cell_type == 0: 
                     color = self._hex_to_rgb(self.colorpalette['safe'])
                 elif cell_type == 1:
@@ -91,14 +151,61 @@ class Dashboard:
                                alpha=0.7, marker='o', markersize=3)
             
         if show_drone:
-            drone_row, drone_col = self.drone.position
-            # Fix: Circle takes (x,y) -> (col, row)
-            circle = patches.Circle((drone_col, drone_row), 0.4,
-                                    color=self.colorpalette['drone'], zorder=10)
+            if drone_pos:
+                drone_row, drone_col = drone_pos
+            else:
+                drone_row, drone_col = self.drone.position
             
-            self.axe_grid.add_patch(circle)
-            self.axe_grid.text(drone_col, drone_row, 'D',
-                               ha='center', va='center', fontsize=12, fontweight='bold', color='white', zorder=11)
+            # Determine direction
+            dx, dy = 0, -1 # Default pointing up
+            if len(self.drone.path_history) > 1:
+                prev_row, prev_col = self.drone.path_history[-2]
+                dx = drone_col - prev_col
+                dy = drone_row - prev_row
+                
+                # Handle zero movement case
+                if dx == 0 and dy == 0:
+                    dx, dy = 0, -1
+            
+            # Normalize direction
+            length = (dx**2 + dy**2)**0.5
+            if length > 0:
+                dx, dy = dx/length, dy/length
+            
+            # Create drone polygon (Triangle/Arrow)
+            # Tip (front), Back-Right, Back-Center, Back-Left
+            # Rotated based on direction (dx, dy)
+            # (x, y) = (col, row)
+            
+            # Perpendicular vector for width
+            px, py = -dy, dx
+            
+            scale = 0.4
+            
+            # Vertices relative to center (0,0)
+            # Front tip
+            v1 = (dx * scale, dy * scale)
+            # Back Right
+            v2 = (-dx * scale * 0.5 + px * scale * 0.5, -dy * scale * 0.5 + py * scale * 0.5)
+            # Back Center (indent)
+            v3 = (-dx * scale * 0.2, -dy * scale * 0.2)
+            # Back Left
+            v4 = (-dx * scale * 0.5 - px * scale * 0.5, -dy * scale * 0.5 - py * scale * 0.5)
+            
+            # Translate to drone position
+            verts = [
+                (drone_col + v1[0], drone_row + v1[1]),
+                (drone_col + v2[0], drone_row + v2[1]),
+                (drone_col + v3[0], drone_row + v3[1]),
+                (drone_col + v4[0], drone_row + v4[1])
+            ]
+            
+            drone_poly = patches.Polygon(verts, closed=True,
+                                         facecolor=self.colorpalette['drone'],
+                                         edgecolor='white', linewidth=1, zorder=15)
+            
+            self.axe_grid.add_patch(drone_poly)
+            # Removed text 'D' for cleaner look
         
         self.axe_grid.set_xlim(-0.5, self.grid.size - 0.5)
         self.axe_grid.set_ylim(self.grid.size - 0.5, -0.5)
@@ -113,6 +220,7 @@ class Dashboard:
         self.draw_battery()
         self.draw_coverage()
         self.draw_stats()
+        self.draw_enhanced_metrics()  # NEW: Draw advanced metrics
 
     def show(self):
         self.axe_grid.set_title('Surveillance grid',
@@ -189,6 +297,11 @@ class Dashboard:
         self.axe_stats.axis('off')
         self.axe_stats.set_facecolor('#0a0a0a')
 
+    def reset_metrics(self):
+        """Reset cached metrics"""
+        self.metrics_data = None
+
+
     def _get_battery_color(self, battery_part):
         if battery_part > 60:
             return '#00ff88'
@@ -219,22 +332,40 @@ class Dashboard:
                                fontweight='bold', color='white', zorder=13)
     
     def on_click(self, event):
-        """Handle mouse clicks to set destination"""
-        if event.inaxes == self.axe_grid and event.button == 1:  # Left click
+        """Handle mouse clicks: Left for destination, Right for obstacle"""
+        if event.inaxes == self.axe_grid:
             col = int(round(event.xdata))
             row = int(round(event.ydata))
             
             # Check if click is within grid bounds
             if 0 <= row < self.grid.size and 0 <= col < self.grid.size:
-                # Check if cell is valid
-                if self.grid.isvalid((row, col)):
-                    self.destination = (row, col)
-                    print(f"Destination set to: ({row}, {col})")
+                
+                # Left click (1): Set Destination
+                if event.button == 1:
+                    # Check if cell is valid
+                    if self.grid.isvalid((row, col)):
+                        self.destination = (row, col)
+                        print(f"Destination set to: ({row}, {col})")
+                        self.draw_grid()
+                        self.draw_destination()
+                        self.fig.canvas.draw_idle()
+                    else:
+                        print(f"Cannot set destination on obstacle/no-fly zone at ({row}, {col})")
+                
+                # Right click (3): Place/Remove Obstacle & Trigger Replanning
+                elif event.button == 3:
+                     # Toggle obstacle
+                    self.grid.toggle_obstacle((row, col))
+                    print(f"Obstacle toggled at ({row}, {col})")
                     self.draw_grid()
-                    self.draw_destination()
+                    if self.destination:
+                        self.draw_destination()
+                    
+                    # Trigger replanning callback if set
+                    if hasattr(self, 'replanning_callback') and self.replanning_callback:
+                        self.replanning_callback((row, col))
+                    
                     self.fig.canvas.draw_idle()
-                else:
-                    print(f"Cannot set destination on obstacle/no-fly zone at ({row}, {col})")
     
     def on_key(self, event):
         """Handle keyboard input to toggle obstacles"""
@@ -257,6 +388,73 @@ class Dashboard:
             row = int(round(event.ydata))
             if 0 <= row < self.grid.size and 0 <= col < self.grid.size:
                 self.hover_pos = (row, col)
+    
+    def draw_enhanced_metrics(self):
+        """Draw enhanced metrics panel with turn count, baseline comparison, energy breakdown"""
+        if not self.axe_metrics:
+            return
+        
+        self.axe_metrics.clear()
+        
+        # Only calculate if we have a path
+        if len(self.drone.path_history) < 2:
+            self.axe_metrics.text(0.5, 0.5, 'Waiting for simulation to start...',
+                                  ha='center', va='center', color='#888888',
+                                  fontsize=11, transform=self.axe_metrics.transAxes)
+            self.axe_metrics.set_xlim(0, 1)
+            self.axe_metrics.set_ylim(0, 1)
+            self.axe_metrics.axis('off')
+            self.axe_metrics.set_facecolor('#0a0a0a')
+            return
+        
+        try:
+            from metrics import get_comprehensive_metrics
+            
+            # Get comprehensive metrics
+            # Check if we have a baseline cached
+            cached_baseline = None
+            if self.metrics_data and 'baseline' in self.metrics_data:
+                cached_baseline = self.metrics_data['baseline']
+
+            metrics = get_comprehensive_metrics(self.drone.path_history, self.grid, self.drone, existing_baseline=cached_baseline)
+            self.metrics_data = metrics  # Cache for later use
+            
+            # Format metrics text
+            metrics_text = f"""
+[ADVANCED METRICS]
+
+Path Analysis:
+  Length: {metrics['path_length']} vs {metrics['baseline']['path_length']} ({metrics['path_length_improvement']:+.1f}%)
+  Turns: {metrics['turns']} ({metrics['turn_reduction']:+.1f}%)
+
+Energy Breakdown:
+  Straight: {metrics['energy']['straight_moves']} | Turns: {metrics['energy']['turn_moves']}
+  Efficiency: {metrics['energy']['efficiency']:.1f}% straight
+  Total Energy: {metrics['energy']['total_energy']} units
+
+Safety Score: {metrics['safety_score']}/100 {'[OK]' if metrics['safety_score'] == 100 else '[WARNING]'}
+  Buffer Violations: {metrics['buffer_violations']} close calls
+            """
+
+            
+            # Display metrics
+            self.axe_metrics.text(0.05, 0.5, metrics_text, 
+                                  color='#00ff88',  # Green
+                                  fontsize=9, 
+                                  family='monospace', 
+                                  va='center',
+                                  transform=self.axe_metrics.transAxes)
+            
+        except Exception as e:
+            # Fallback if metrics calculation fails
+            self.axe_metrics.text(0.5, 0.5, f'Metrics calculation pending...',
+                                  ha='center', va='center', color='#888888',
+                                  fontsize=10, transform=self.axe_metrics.transAxes)
+        
+        self.axe_metrics.set_xlim(0, 1)
+        self.axe_metrics.set_ylim(0, 1)
+        self.axe_metrics.axis('off')
+        self.axe_metrics.set_facecolor('#0a0a0a')
         
 if __name__ == "__main__":
     from grid import Grid

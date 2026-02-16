@@ -24,6 +24,15 @@ class Drone:
     def can_move(self):
         return self.battery >= self.moving_cost
     
+    def check_safety_margin(self, distance_to_home):
+        """
+        Check if we have enough battery to return home with a safety margin.
+        Safety margin = 1.5x the distance cost
+        """
+        required_battery = distance_to_home * self.moving_cost * 1.5
+        return self.battery > required_battery
+
+    
     def get_battery_percentage(self):
         return (self.battery / self.battery_capacity) * 100
     
