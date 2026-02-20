@@ -2,6 +2,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "java",
+      "name": "inheritance",
+      "request": "launch",
+      "mainClass": "inheritance",
+      "projectName": "defense_e96ffda7"
+    },
+    {
+      "type": "java",
+      "name": "program8",
+      "request": "launch",
+      "mainClass": "program8",
+      "projectName": "defense_e96ffda7"
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
